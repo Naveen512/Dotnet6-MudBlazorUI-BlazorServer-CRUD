@@ -1,0 +1,28 @@
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Name" @bind-Value="cake.Name" />
+        <MudTextField T="decimal" Label="Price" @bind-Value="cake.Price" />
+        <MudTextField T="string" Label="Description" @bind-Value="cake.Description" Lines=4/>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Cake cake { get; set; } = new Cake();
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok<Cake>(cake));
+    }
+
+}

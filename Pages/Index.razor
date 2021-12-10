@@ -1,0 +1,95 @@
+﻿@page "/"
+@inject MyWorldDbContext _myworldDbContext;
+@inject IDialogService _dialogService;
+
+<MudContainer Class="d-flex justify-center mb-2">
+    <MudFab Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Large" IconSize="Size.Large" Label="Add A New
+    Cake" Class="ma-2" @onclick="(e => CreateAsync())" />
+</MudContainer>
+<MudGrid Justify="Justify.Center" class="pr-4 pl-4">
+    @foreach (var cake in allCakes)
+    {
+        <MudItem xs="3">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.body1">@cake.Name</MudText>
+                        <MudText Typo="Typo.h6">@cake.Price $</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardMedia Image="images/sample-cake.jpg" Height="250" />
+                <MudCardContent>
+                    <MudText Typo="Typo.body2">@cake.Description</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudIconButton Icon="@Icons.Filled.Edit" Color="Color.Primary" @onclick="(e => UpdateAsync(cake.Id))" />
+                    <MudIconButton Icon="@Icons.Filled.Delete" Color="Color.Error" @onclick="(e => DeleteAsync(cake.Id))" />
+                </MudCardActions>
+            </MudCard>
+
+        </MudItem>
+
+    }
+
+</MudGrid>
+
+@code {
+    List<Cake> allCakes = new List<Cake>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        allCakes = await _myworldDbContext.Cake.ToListAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("cake", new Cake());
+        var dialog = await _dialogService.Show<AddOrUpdateCakeDialog>("Create A Item", parameters).Result;
+
+        if (dialog.Data != null)
+        {
+            Cake newCake = dialog.Data as Cake;
+            _myworldDbContext.Cake.Add(newCake);
+            await _myworldDbContext.SaveChangesAsync();
+
+
+            allCakes.Insert(0, newCake);
+        }
+    }
+
+    private async Task UpdateAsync(int id)
+    {
+        var parameters = new DialogParameters();
+        var cakeNeedToUpdate = allCakes.FirstOrDefault(_ => _.Id == id);
+        parameters.Add("cake", cakeNeedToUpdate);
+        var dialog = await _dialogService.Show<AddOrUpdateCakeDialog>("Update A Item", parameters).Result;
+        if (dialog.Data != null)
+        {
+            var updatedCake = dialog.Data as Cake;
+            _myworldDbContext.Cake.Update(updatedCake);
+            await _myworldDbContext.SaveChangesAsync();
+
+            allCakes.Remove(cakeNeedToUpdate);
+            allCakes.Insert(0, updatedCake);
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        bool? result = await _dialogService.ShowMessageBox(
+        "Delete Confirmation",
+        "Deleting can not be undone!",
+        yesText: "Delete!", cancelText: "Cancel");
+
+        if (result ?? false)
+        {
+            var cakeToRemove = await _myworldDbContext.Cake.FindAsync(id);
+            _myworldDbContext.Cake.Remove(cakeToRemove);
+            await _myworldDbContext.SaveChangesAsync();
+
+            allCakes.Remove(cakeToRemove);
+        }
+    }
+}
